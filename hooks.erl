@@ -30,6 +30,18 @@
 precommit_nop(Obj) ->
     Obj.
 
+precommit_identity(Obj) ->
+    Values = riak_object:get_values(Obj),
+    riak_object:apply_updates(
+      riak_object:update_value(Obj, hd(Values))).
+
+precommit_json_identity(Obj) ->
+    Values = riak_object:get_values(Obj),
+    {struct, TermList} = mochijson2:decode(hd(Values)),
+    riak_object:apply_updates(
+      riak_object:update_value(Obj, 
+                               iolist_to_binary(mochijson2:encode({struct, TermList})))).
+
 precommit_fail(_Obj) ->
     fail.
 
@@ -50,6 +62,7 @@ precommit_failkey(Obj) ->
             Obj
     end.
 
+                          
 
 set_precommit(Bucket, Hook) when is_atom(Hook) ->
     set_precommit(Bucket, atom_to_binary(Hook, latin1));
@@ -76,9 +89,12 @@ set_hooks() ->
     set_postcommit().
 
 set_precommit() ->
-    hooks:set_precommit(<<"failatom">>,precommit_failatom),    
-    hooks:set_precommit(<<"failstr">>,precommit_failstr),    
-    hooks:set_precommit(<<"failbin">>,precommit_failbin),    
+    hooks:set_precommit(<<"nop">>,precommit_nop),
+    hooks:set_precommit(<<"identity">>,precommit_identity),
+    hooks:set_precommit(<<"json_identity">>,precommit_json_identity),
+    hooks:set_precommit(<<"failatom">>,precommit_failatom),
+    hooks:set_precommit(<<"failstr">>,precommit_failstr),
+    hooks:set_precommit(<<"failbin">>,precommit_failbin),
     hooks:set_precommit(<<"failkey">>,precommit_failkey).
     
 set_postcommit() ->

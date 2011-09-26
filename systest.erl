@@ -61,6 +61,19 @@ read(Start, End, Bucket, R) ->
         end,
     lists:foldl(F, [], lists:seq(Start, End)).
 
+read(_Start, _End, _Bucket, _R, 0) ->
+    io:format("Done\n");
+read(Start, End, Bucket, R, Iter) ->
+    Diffs = read(Start, End, Bucket, R),
+    case Diffs of
+        [] ->
+            io:format("~p: ok\n", [Iter]);
+        _ ->
+            io:format("~p: DIFFS missing ~p\n", [Iter, length(Diffs)])
+    end,
+    read(Start, End, Bucket, R, Iter - 1).
+    
+
 
 listkeys(Size) ->
     listkeys(1, Size, <<"systest">>).
@@ -71,4 +84,17 @@ listkeys(Start, End, Bucket) ->
     {ok, Got} = C:list_keys(Bucket),
     Got2 = ordsets:from_list(Got),
     ordsets:subtract(Expect, Got2) ++ ordsets:subtract(Got2, Expect).
+    
+
+listkeys(Start, End, Bucket, 0) ->
+    io:format("Done\n");
+listkeys(Start, End, Bucket, Iter) ->
+    Diffs = listkeys(Start, End, Bucket),
+    case Diffs of
+        [] ->
+            io:format("~p: ok\n", [Iter]);
+        _ ->
+            io:format("~p: DIFFS missing ~p\n", [Iter, length(Diffs)])
+    end,
+    listkeys(Start, End, Bucket, Iter - 1).
     
